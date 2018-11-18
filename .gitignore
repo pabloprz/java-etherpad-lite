@@ -5,3 +5,6 @@ release.properties
 *.iws
 *.iml
 .idea/
+.project
+.settings/
+

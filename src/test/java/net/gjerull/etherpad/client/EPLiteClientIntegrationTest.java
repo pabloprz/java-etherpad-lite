@@ -30,6 +30,10 @@ public class EPLiteClientIntegrationTest {
 	public void startMockServer() {
 		this.client = new EPLiteClient("http://localhost:9001",
 				"a04f17343b51afaa036a7428171dd873469cd85911ab43be0503d29d2acbbd58");
+
+		((ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger("org.mockserver.mock"))
+				.setLevel(ch.qos.logback.classic.Level.OFF);
+
 		mockServer = startClientAndServer(9001);
 	}
 

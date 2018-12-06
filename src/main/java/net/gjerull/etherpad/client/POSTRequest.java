@@ -2,6 +2,11 @@ package net.gjerull.etherpad.client;
 
 import java.net.URL;
 import java.net.URLConnection;
+
+import etm.core.configuration.EtmManager;
+import etm.core.monitor.EtmMonitor;
+import etm.core.monitor.EtmPoint;
+
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
@@ -17,40 +22,48 @@ import java.io.OutputStreamWriter;
  * </code>
  */
 public class POSTRequest implements Request {
-    private final URL url;
-    private final String body;
+	private final URL url;
+	private final String body;
+	private static final EtmMonitor ETM_MONITOR = EtmManager.getEtmMonitor();
 
-    /**
-     * Instantiates a new POSTRequest.
-     *
-     * @param url the URL object
-     * @param body url-encoded (application/x-www-form-urlencoded) request body
-     */
-    public POSTRequest(URL url, String body) {
-        this.url = url;
-        this.body = body;
-    }
+	/**
+	 * Instantiates a new POSTRequest.
+	 *
+	 * @param url  the URL object
+	 * @param body url-encoded (application/x-www-form-urlencoded) request body
+	 */
+	public POSTRequest(URL url, String body) {
+		this.url = url;
+		this.body = body;
+	}
 
-    /**
-     * Sends the request and returns the response.
-     * 
-     * @return String
-     */
-    public String send() throws Exception {
-        URLConnection con = this.url.openConnection();
-        con.setDoOutput(true);
+	/**
+	 * Sends the request and returns the response.
+	 * 
+	 * @return String
+	 */
+	public String send() throws Exception {
 
-        OutputStreamWriter out = new OutputStreamWriter(con.getOutputStream());
-        out.write(this.body);
-        out.close();
+		EtmPoint point = ETM_MONITOR.createPoint("Monitor point in POSTRequest.send");
 
-        BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
-        StringBuilder response = new StringBuilder();
-        String buffer;
-        while ((buffer = in.readLine()) != null) {
-            response.append(buffer);
-        }
-        in.close();
-        return response.toString();
-    }
+		try {
+			URLConnection con = this.url.openConnection();
+			con.setDoOutput(true);
+
+			OutputStreamWriter out = new OutputStreamWriter(con.getOutputStream());
+			out.write(this.body);
+			out.close();
+
+			BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
+			StringBuilder response = new StringBuilder();
+			String buffer;
+			while ((buffer = in.readLine()) != null) {
+				response.append(buffer);
+			}
+			in.close();
+			return response.toString();
+		} finally {
+			point.collect();
+		}
+	}
 }

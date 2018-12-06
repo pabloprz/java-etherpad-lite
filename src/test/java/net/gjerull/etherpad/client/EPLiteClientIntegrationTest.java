@@ -7,9 +7,9 @@ import static org.mockserver.integration.ClientAndServer.startClientAndServer;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.Date;
 
 import org.junit.After;
 import org.junit.Before;
@@ -19,12 +19,19 @@ import org.mockserver.model.HttpRequest;
 import org.mockserver.model.HttpResponse;
 import org.mockserver.model.StringBody;
 
+import etm.core.configuration.BasicEtmConfigurator;
+import etm.core.configuration.EtmManager;
+import etm.core.monitor.EtmMonitor;
+import etm.core.renderer.MeasurementRenderer;
+import etm.core.renderer.SimpleTextRenderer;
+
 /**
  * Integration test for simple App.
  */
 public class EPLiteClientIntegrationTest {
 	private EPLiteClient client;
 	private ClientAndServer mockServer;
+	private static EtmMonitor monitor;
 
 	@Before
 	public void startMockServer() {
@@ -35,11 +42,18 @@ public class EPLiteClientIntegrationTest {
 				.setLevel(ch.qos.logback.classic.Level.OFF);
 
 		mockServer = startClientAndServer(9001);
+
+		BasicEtmConfigurator.configure();
+		monitor = EtmManager.getEtmMonitor();
+		monitor.start();
 	}
 
 	@After
 	public void stopMockServer() {
 		mockServer.stop();
+
+		monitor.render(new SimpleTextRenderer());
+		monitor.stop();
 	}
 
 	@Test
@@ -1139,5 +1153,29 @@ public class EPLiteClientIntegrationTest {
 			client.deletePad(padID);
 		}
 
+	}
+
+	// Stress test
+	@Test
+	public void createManySessions() {
+
+		mockServer.when(HttpRequest.request().withMethod("POST").withPath("/api/1.2.13/createPad")
+				.withBody(new StringBody(
+						"apikey=a04f17343b51afaa036a7428171dd873469cd85911ab43be0503d29d2acbbd58&padID=integration-test-pad")))
+				.respond(HttpResponse.response().withStatusCode(200)
+						.withBody("{\"code\":0,\"message\":\"ok\",\"data\":null}"));
+
+		mockServer
+				.when(HttpRequest.request().withMethod("POST").withPath("/api/1.2.13/setText").withBody(new StringBody(
+						"apikey=a04f17343b51afaa036a7428171dd873469cd85911ab43be0503d29d2acbbd58&padID=integration-test-pad&text=Stress+testing+the+application")))
+				.respond(HttpResponse.response().withStatusCode(200)
+						.withBody("{\"code\":0,\"message\":\"ok\",\"data\":null}"));
+
+		String padID = "integration-test-pad";
+		client.createPad(padID);
+
+		for (int i = 0; i < 100; i++) {
+			client.setText(padID, "Stress testing the application");
+		}
 	}
 }

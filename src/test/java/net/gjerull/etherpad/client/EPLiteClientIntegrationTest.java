@@ -1,6 +1,7 @@
 package net.gjerull.etherpad.client;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockserver.integration.ClientAndServer.startClientAndServer;
@@ -22,7 +23,6 @@ import org.mockserver.model.StringBody;
 import etm.core.configuration.BasicEtmConfigurator;
 import etm.core.configuration.EtmManager;
 import etm.core.monitor.EtmMonitor;
-import etm.core.renderer.MeasurementRenderer;
 import etm.core.renderer.SimpleTextRenderer;
 
 /**
@@ -877,6 +877,8 @@ public class EPLiteClientIntegrationTest {
 				.respond(HttpResponse.response().withStatusCode(200)
 						.withBody("{\"code\":0,\"message\":\"ok\",\"data\":{\"text\":\"should be kept\\n\"}}"));
 
+		// Impossible to avoid mutation. If internal call of copy pad is deleted, mocked
+		// server can't be changed.
 		String copyPadText = (String) client.getText(copyPadId).get("text");
 
 		mockServer.clear(HttpRequest.request().withMethod("POST").withPath("/api/1.2.13/copyPad"));
@@ -1076,7 +1078,8 @@ public class EPLiteClientIntegrationTest {
 					.respond(HttpResponse.response().withStatusCode(200).withBody(
 							"{\"code\":0,\"message\":\"ok\",\"data\":{\"authorID\":\"a.SA3FfS0IfBIUTL6F\"}}"));
 
-			client.appendChatMessage(padID, "hi from user1", author1Id);
+			Map message = client.appendChatMessage(padID, "hi from user1", author1Id);
+			assertEquals("a.SA3FfS0IfBIUTL6F", message.get("authorID"));
 
 			long timeMillisMsg1 = System.currentTimeMillis() / 1000L;
 
@@ -1088,7 +1091,8 @@ public class EPLiteClientIntegrationTest {
 					.respond(HttpResponse.response().withStatusCode(200).withBody(
 							"{\"code\":0,\"message\":\"ok\",\"data\":{\"authorID\":\"a.SA3FfS0IfBIUTL6F\"}}"));
 
-			client.appendChatMessage(padID, "hi from user2", author2Id, System.currentTimeMillis() / 1000L);
+			message = client.appendChatMessage(padID, "hi from user2", author2Id, System.currentTimeMillis() / 1000L);
+			assertEquals("a.SA3FfS0IfBIUTL6F", message.get("authorID"));
 
 			long timeMillisMsg2 = System.currentTimeMillis() / 1000L;
 
@@ -1101,7 +1105,9 @@ public class EPLiteClientIntegrationTest {
 					.respond(HttpResponse.response().withStatusCode(200).withBody(
 							"{\"code\":0,\"message\":\"ok\",\"data\":{\"authorID\":\"a.SA3FfS0IfBIUTL6F\"}}"));
 
-			client.appendChatMessage(padID, "gå å gjør et ærend", author1Id, System.currentTimeMillis() / 1000L);
+			message = client.appendChatMessage(padID, "gå å gjør et ærend", author1Id,
+					System.currentTimeMillis() / 1000L);
+			assertEquals("a.SA3FfS0IfBIUTL6F", message.get("authorID"));
 
 			mockServer.when(HttpRequest.request().withMethod("GET").withPath("/api/1.2.13/getChatHead")
 					.withBody(new StringBody(
@@ -1177,5 +1183,54 @@ public class EPLiteClientIntegrationTest {
 		for (int i = 0; i < 100; i++) {
 			client.setText(padID, "Stress testing the application");
 		}
+	}
+
+	@Test
+	public void createClientWithArguments() {
+
+		EPLiteClient newClient = new EPLiteClient("http://localhost:9001",
+				"a04f17343b51afaa036a7428171dd873469cd85911ab43be0503d29d2acbbd58", "1.2.13", "UTF-8");
+
+		mockServer
+				.when(HttpRequest.request().withMethod("POST").withPath("/api/1.2.13/createGroup").withBody(
+						new StringBody("apikey=a04f17343b51afaa036a7428171dd873469cd85911ab43be0503d29d2acbbd58")))
+				.respond(HttpResponse.response().withStatusCode(200)
+						.withBody("{\"code\":0,\"message\":\"ok\",\"data\":{\"groupID\":\"g.MAPOoRpxOr5vYwkY\"}}"));
+
+		Map response = newClient.createGroup();
+
+		assertTrue(response.containsKey("groupID"));
+		String groupId = (String) response.get("groupID");
+		assertTrue("Unexpected groupID " + groupId, groupId != null && groupId.startsWith("g."));
+	}
+
+	@Test
+	public void listPadsOfAuthorTest() {
+
+		mockServer
+				.when(HttpRequest.request().withMethod("GET").withPath("/api/1.2.13/createAuthor").withBody(
+						new StringBody("apikey=a04f17343b51afaa036a7428171dd873469cd85911ab43be0503d29d2acbbd58")))
+				.respond(HttpResponse.response().withStatusCode(200)
+						.withBody("{\"code\":0,\"message\":\"ok\",\"data\":{\"authorID\":\"a.E91SuQv71kDEGF6w\"}}"));
+
+		mockServer.when(HttpRequest.request().withMethod("GET").withPath("/api/1.2.13/listPadsOfAuthor")
+				.withBody(new StringBody(
+						"apikey=a04f17343b51afaa036a7428171dd873469cd85911ab43be0503d29d2acbbd58&authorID=a.E91SuQv71kDEGF6w")))
+				.respond(HttpResponse.response().withStatusCode(200)
+						.withBody("{\"code\":0,\"message\":\"ok\",\"data\":{\"padIDs\":[]}}"));
+
+		Map authorResponse = client.createAuthor();
+		String authorId = (String) authorResponse.get("authorID");
+		assertTrue(authorId != null && !authorId.isEmpty());
+
+		List pads = (List) client.listPadsOfAuthor(authorId).get("padIDs");
+		assertEquals(0, pads.size());
+	}
+
+	@Test
+	public void testSecureConnection() {
+
+		assertEquals(false, client.isSecure());
+		assertFalse(client.isSecure());
 	}
 }

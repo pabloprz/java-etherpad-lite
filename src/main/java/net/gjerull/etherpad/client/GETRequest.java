@@ -19,40 +19,47 @@ import etm.core.monitor.EtmPoint;
  * </code>
  */
 public class GETRequest implements Request {
-	private final URL url;
-	private static final EtmMonitor ETM_MONITOR = EtmManager.getEtmMonitor();
+    /** The url. */
+    private final URL url;
 
-	/**
-	 * Instantiates a new GETRequest.
-	 * 
-	 * @param url the URL object
-	 */
-	public GETRequest(URL url) {
-		this.url = url;
-	}
+    /** The Constant ETM_MONITOR. */
+    private static final EtmMonitor ETM_MONITOR = EtmManager
+            .getEtmMonitor();
 
-	/**
-	 * Sends the request and returns the response.
-	 * 
-	 * @return String
-	 */
-	public String send() throws Exception {
+    /**
+     * Instantiates a new GETRequest.
+     *
+     * @param nUrl the URL object
+     */
+    public GETRequest(final URL nUrl) {
+        this.url = nUrl;
+    }
 
-		EtmPoint point = ETM_MONITOR.createPoint("Monitor point in GETRequest.send");
+    /**
+     * Sends the request and returns the response.
+     *
+     * @return String
+     * @throws Exception the exception
+     */
+    public final String send() throws Exception {
 
-		try {
-			BufferedReader in = new BufferedReader(new InputStreamReader(url.openStream()));
-			StringBuilder response = new StringBuilder();
-			String buffer;
+        EtmPoint point = ETM_MONITOR
+                .createPoint("Monitor point in GETRequest.send");
 
-			while ((buffer = in.readLine()) != null) {
-				response.append(buffer);
-			}
-			in.close();
+        try {
+            BufferedReader in = new BufferedReader(
+                    new InputStreamReader(url.openStream()));
+            StringBuilder response = new StringBuilder();
+            String buffer;
 
-			return response.toString();
-		} finally {
-			point.collect();
-		}
-	}
+            while ((buffer = in.readLine()) != null) {
+                response.append(buffer);
+            }
+            in.close();
+
+            return response.toString();
+        } finally {
+            point.collect();
+        }
+    }
 }

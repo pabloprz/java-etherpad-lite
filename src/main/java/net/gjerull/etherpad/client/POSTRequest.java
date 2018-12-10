@@ -22,48 +22,61 @@ import java.io.OutputStreamWriter;
  * </code>
  */
 public class POSTRequest implements Request {
-	private final URL url;
-	private final String body;
-	private static final EtmMonitor ETM_MONITOR = EtmManager.getEtmMonitor();
 
-	/**
-	 * Instantiates a new POSTRequest.
-	 *
-	 * @param url  the URL object
-	 * @param body url-encoded (application/x-www-form-urlencoded) request body
-	 */
-	public POSTRequest(URL url, String body) {
-		this.url = url;
-		this.body = body;
-	}
+    /** The url. */
+    private final URL url;
 
-	/**
-	 * Sends the request and returns the response.
-	 * 
-	 * @return String
-	 */
-	public String send() throws Exception {
+    /** The body. */
+    private final String body;
 
-		EtmPoint point = ETM_MONITOR.createPoint("Monitor point in POSTRequest.send");
+    /** The Constant ETM_MONITOR. */
+    private static final EtmMonitor ETM_MONITOR = EtmManager
+            .getEtmMonitor();
 
-		try {
-			URLConnection con = this.url.openConnection();
-			con.setDoOutput(true);
+    /**
+     * Instantiates a new POSTRequest.
+     *
+     * @param nUrl  the URL object
+     * @param nBody url-encoded
+     *              (application/x-www-form-urlencoded) request
+     *              body
+     */
+    public POSTRequest(final URL nUrl, final String nBody) {
+        this.url = nUrl;
+        this.body = nBody;
+    }
 
-			OutputStreamWriter out = new OutputStreamWriter(con.getOutputStream());
-			out.write(this.body);
-			out.close();
+    /**
+     * Sends the request and returns the response.
+     *
+     * @return String
+     * @throws Exception the exception
+     */
+    public final String send() throws Exception {
 
-			BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
-			StringBuilder response = new StringBuilder();
-			String buffer;
-			while ((buffer = in.readLine()) != null) {
-				response.append(buffer);
-			}
-			in.close();
-			return response.toString();
-		} finally {
-			point.collect();
-		}
-	}
+        EtmPoint point = ETM_MONITOR.createPoint(
+                "Monitor point in POSTRequest.send");
+
+        try {
+            URLConnection con = this.url.openConnection();
+            con.setDoOutput(true);
+
+            OutputStreamWriter out = new OutputStreamWriter(
+                    con.getOutputStream());
+            out.write(this.body);
+            out.close();
+
+            BufferedReader in = new BufferedReader(
+                    new InputStreamReader(con.getInputStream()));
+            StringBuilder response = new StringBuilder();
+            String buffer;
+            while ((buffer = in.readLine()) != null) {
+                response.append(buffer);
+            }
+            in.close();
+            return response.toString();
+        } finally {
+            point.collect();
+        }
+    }
 }

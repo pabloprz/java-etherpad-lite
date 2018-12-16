@@ -2,6 +2,7 @@ package net.gjerull.etherpad.client;
 
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.charset.StandardCharsets;
 
 import etm.core.configuration.EtmManager;
 import etm.core.monitor.EtmMonitor;
@@ -62,12 +63,14 @@ public class POSTRequest implements Request {
             con.setDoOutput(true);
 
             OutputStreamWriter out = new OutputStreamWriter(
-                    con.getOutputStream());
+                    con.getOutputStream(),
+                    StandardCharsets.UTF_8);
             out.write(this.body);
             out.close();
 
             BufferedReader in = new BufferedReader(
-                    new InputStreamReader(con.getInputStream()));
+                    new InputStreamReader(con.getInputStream(),
+                            StandardCharsets.UTF_8));
             StringBuilder response = new StringBuilder();
             String buffer;
             while ((buffer = in.readLine()) != null) {

@@ -3,6 +3,7 @@ package net.gjerull.etherpad.client;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 
 import etm.core.configuration.EtmManager;
 import etm.core.monitor.EtmMonitor;
@@ -48,7 +49,8 @@ public class GETRequest implements Request {
 
         try {
             BufferedReader in = new BufferedReader(
-                    new InputStreamReader(url.openStream()));
+                    new InputStreamReader(url.openStream(),
+                            StandardCharsets.UTF_8));
             StringBuilder response = new StringBuilder();
             String buffer;
 

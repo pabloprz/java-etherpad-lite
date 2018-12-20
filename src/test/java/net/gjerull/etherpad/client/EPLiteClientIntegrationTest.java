@@ -1095,7 +1095,7 @@ public class EPLiteClientIntegrationTest {
 			assertEquals("a.SA3FfS0IfBIUTL6F", message.get("authorID"));
 
 			long timeMillisMsg2 = System.currentTimeMillis() / 1000L;
-
+			
 			mockServer.clear(HttpRequest.request().withMethod("POST").withPath("/api/1.2.13/appendChatMessage"));
 			mockServer.when(HttpRequest.request().withMethod("POST").withPath("/api/1.2.13/appendChatMessage")
 					.withBody(new StringBody(
@@ -1106,7 +1106,7 @@ public class EPLiteClientIntegrationTest {
 							"{\"code\":0,\"message\":\"ok\",\"data\":{\"authorID\":\"a.SA3FfS0IfBIUTL6F\"}}"));
 
 			message = client.appendChatMessage(padID, "gå å gjør et ærend", author1Id,
-					System.currentTimeMillis() / 1000L);
+					timeMillisMsg2);
 			assertEquals("a.SA3FfS0IfBIUTL6F", message.get("authorID"));
 
 			mockServer.when(HttpRequest.request().withMethod("GET").withPath("/api/1.2.13/getChatHead")
